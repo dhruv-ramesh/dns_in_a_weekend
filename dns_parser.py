@@ -2,6 +2,10 @@ from dns_query import DNSQuestion, DNSHeader, build_query
 from dataclasses import dataclass
 import struct
 from typing import List
+from io import BytesIO
+
+TYPE_A = 1
+TYPE_NS = 2
 
 
 @dataclass
@@ -59,7 +63,12 @@ def parse_record(reader):
     name = decode_name(reader)
     data = reader.read(10)
     type_, class_, ttl, data_len = struct.unpack("!HHIH", data)
-    data = reader.read(data_len)
+    if type_ == TYPE_NS:
+        data = decode_name(reader)
+    elif type == TYPE_A:
+        data = ip_to_string(reader.read(data_len))
+    else:
+        data = reader.read(data_len)
     return DNSRecord(name, type_, class_, ttl, data)
 
 
